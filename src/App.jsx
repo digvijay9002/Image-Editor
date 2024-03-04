@@ -1,19 +1,18 @@
+import { BrowserRouter } from "react-router-dom";
 import "./App.css";
-import Footer from "./components/Footer";
+// import Footer from "./components/Footer";
 import ImageEditorProvider from "./components/ImageEditorProvider";
-import ImagePreview from "./components/ImagePreview";
-import ImageUpload from "./components/ImageUpload";
-// import Lesson from "./components/Lesson.jsx"
+import Navbar from "./components/Navbar/Navbar";
+import ImageEditor from "./components/ImageEditor/ImageEditor"
 
 function App() {
   return (
-    <div className="container">
+    <BrowserRouter>
       <ImageEditorProvider>
-        <ImageUpload />
-        <ImagePreview />
-        <Footer />
+        <Navbar />
+        <ImageEditor />
       </ImageEditorProvider>
-    </div>
+    </BrowserRouter >
   );
 }
 

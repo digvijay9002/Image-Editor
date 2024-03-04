@@ -39,7 +39,6 @@ const ImagePreview = () => {
           <Flip />
         </div>
         <div id="image-preview" className={`image-canvas ${appliedFilter}`}>
-
         </div>
       </div >
       <div className="cssGram-filters">

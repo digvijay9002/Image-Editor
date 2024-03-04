@@ -10,8 +10,8 @@ const ImageEditorProvide = ({ children }) => {
   const [oldImage, setOldImage] = useState(null);
   const [imageName, setImageName] = useState("");
   // const [imageUrl, setImageUrl] = useState(null);
+  const [loadedImage, setLoadedImage] = useState(false);
   const [settings, setSettings] = useState({
-
     grayscale: 0,
     brightness: 0,
     saturation: 0,
@@ -505,7 +505,7 @@ const ImageEditorProvide = ({ children }) => {
   );
 
   const cropSelectedArea = () => {
-    createCropPreview(imageRef.current, true);
+    createCropPreview(imageRef.current);
   };
 
   const displayFiles = (files) => {
@@ -514,49 +514,94 @@ const ImageEditorProvide = ({ children }) => {
 
     reader.onload = (e) => {
       if (file) {
-        const imagePreview = document.getElementById("image-preview");
-        const oldCanvas = document.getElementById("canvas");
-        const previewContainer = document.querySelector(
-          ".image-preview-container"
-        );
-        if (oldCanvas) {
-          oldCanvas.remove();
-        }
+        // const imagePreview = document.getElementById("image-preview");
+        // const oldCanvas = document.getElementById("canvas");
+        // const previewContainer = document.querySelector(
+        //   ".image-preview-container"
+        // );
+        // if (oldCanvas) {
+        //   oldCanvas.remove();
+        // }
 
-        const canvas = document.createElement("canvas");
-        canvas.id = "canvas";
-        const ctx = canvas.getContext("2d");
+        // const canvas = document.createElement("canvas");
+        // canvas.id = "canvas";
+        // const ctx = canvas.getContext("2d");
 
-        const img = document.createElement("img");
-        img.src = e.target.result;
-        img.id = "preview-image";
+        // const img = document.createElement("img");
+        // img.src = e.target.result;
+        // img.id = "preview-image";
 
-        if (previewContainer) previewContainer.style.display = "grid";
+        // if (previewContainer) previewContainer.style.display = "grid";
 
-        const { width, height } = imagePreview.getBoundingClientRect();
+        // const { width, height } = imagePreview.getBoundingClientRect();
 
-        canvas.width = width;
-        canvas.height = height;
+        // canvas.width = width;
+        // canvas.height = height;
 
-        canvasRef.current = canvas;
-        ctxRef.current = ctx;
-        imageRef.current = img;
+        // canvasRef.current = canvas;
+        // ctxRef.current = ctx;
+        // imageRef.current = img;
 
-        ctx.canvas.style.boxShadow = "rgba(0, 0, 0, 0.15) 0px 2px 8px";
-        ctx.canvas.style.backgroundColor = "white";
+        // ctx.canvas.style.boxShadow = "rgba(0, 0, 0, 0.15) 0px 2px 8px";
+        // ctx.canvas.style.backgroundColor = "white";
 
-        if (imagePreview) {
-          imagePreview.appendChild(canvas);
-        }
+        // if (imagePreview) {
+        //   imagePreview.appendChild(canvas);
+        // }
 
-        setOldImage(e.target.result);
-        setImageName(file.name);
-        setImage(e.target.result);
+        // setOldImage(e.target.result);
+        // setImageName(file.name);
+        // setImage(e.target.result);
+
+        setLoadedImage(e);
       }
     };
 
     reader.readAsDataURL(file);
   };
+
+  useEffect(() => {
+    if (loadedImage) {
+      const imagePreview = document.getElementById("image-preview");
+      const oldCanvas = document.getElementById("canvas");
+      const previewContainer = document.querySelector(
+        ".image-preview-container"
+      );
+      if (oldCanvas) {
+        oldCanvas.remove();
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.id = "canvas";
+      const ctx = canvas.getContext("2d");
+
+      const img = document.createElement("img");
+      img.src = loadedImage.target.result;
+      img.id = "preview-image";
+
+      if (previewContainer) previewContainer.style.display = "grid";
+
+      const { width, height } = imagePreview.getBoundingClientRect();
+
+      canvas.width = width;
+      canvas.height = height;
+
+      canvasRef.current = canvas;
+      ctxRef.current = ctx;
+      imageRef.current = img;
+
+      ctx.canvas.style.boxShadow = "rgba(0, 0, 0, 0.15) 0px 2px 8px";
+      ctx.canvas.style.backgroundColor = "white";
+
+      if (imagePreview) {
+        imagePreview.appendChild(canvas);
+      }
+
+      setOldImage(loadedImage.target.result);
+      setImageName(loadedImage.name);
+      setImage(loadedImage.target.result);
+    }
+  }, [loadedImage]);
 
   const handleDrop = (e) => {
     const dropZone = document.getElementById("drag-drop-container");
@@ -589,34 +634,18 @@ const ImageEditorProvide = ({ children }) => {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.putImageData(data, dx, dy);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(zoomScale, zoomScale);
 
     const dataUrl = canvas.toDataURL();
 
     setDisabledCropBtn(true);
     setCurrentCoordinates({
-      x: sx,
-      y: sy,
+      x: dx,
+      y: dy,
       width: croppedWidth,
       height: croppedHeight,
     });
 
-    const img = new Image();
-    img.src = dataUrl;
-
-    ctx.imageSmoothingQuality = "high";
-    ctx.save();
-    drawImageOnCanvas(canvas, ctx, img, false, true); // Call drawImageOnCanvas here
-    ctx.restore();
-
-    if (cropBox) {
-      toggleCropBox();
-    }
-
-    if (dataUrl !== "data:,") {
-      setImage(dataUrl);
-    }
+    setImage(dataUrl);
   }
 
 
@@ -872,7 +901,8 @@ const ImageEditorProvide = ({ children }) => {
         // imageUrl,
         handleRemoveBG,
         appliedFilter,
-        applyFilter
+        applyFilter,
+        loadedImage
       }}
     >
       {children}
