@@ -5,26 +5,23 @@ const Flip = () => {
   const { setFlipRotate } = useContext(ImageEditorContext);
   return (
     <div className="flip-container">
-      <button
-        onClick={() => {
+          <span class="material-symbols-outlined" onClick={() => {
           setFlipRotate((prev) => ({
             ...prev,
             flipHorizontal: prev.flipHorizontal === 1 ? -1 : 1,
           }));
-        }}
-      >
-        Flip X
-      </button>
-      <button
-        onClick={() => {
+        }}>
+             flip
+          </span>
+
+             <span class="material-symbols-outlined" id="flipVertical"  onClick={() => {
           setFlipRotate((prev) => ({
             ...prev,
             flipVertical: prev.flipVertical === 1 ? -1 : 1,
           }));
-        }}
-      >
-        Flip Y
-      </button>
+        }}>
+              flip 
+          </span>
       {/* <button
         onClick={() => {
           setFlipRotate((prev) => ({

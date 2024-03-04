@@ -9,16 +9,15 @@ const ImageEditor = () => {
     return (
         <>
             {!loadedImage && <ImageUpload />}
-            {loadedImage && (
-                <>
-                    <div className="main-editor-container">
-                        <Footer />
-                        <ImagePreview />
-                    </div>
-                </>
-            )}
+            {loadedImage && 
+                <div className="main-editor-container">
+                    <ImagePreview />
+                    <Footer />
+                </div>
+            }
         </>
     );
 };
+
 
 export default ImageEditor;
