@@ -3,7 +3,7 @@ import { ImageEditorContext } from "./ImageEditorProvider";
 
 const Settings = () => {
   const { settings, handleSettings } = useContext(ImageEditorContext);
-  
+
   const options = [
     { name: "grayscale", max: 100 },
     { name: "brightness", max: 100 },
@@ -20,7 +20,7 @@ const Settings = () => {
           <label className="setting">
             <div className="label-value-area">
               <span>{name.substring(0, 1).toUpperCase() + name.substring(1)}</span>
-              <span>{`(${settings[name] || 0})`}</span>
+              <span>{`${settings[name] || 0}`}</span>
             </div>
             <input
               name={name}
