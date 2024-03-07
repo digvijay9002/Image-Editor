@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { ImageEditorContext } from "./ImageEditorProvider";
 
 const Footer = () => {
-  const { downloadImage, reset, image, disabledCropBtn, cropSelectedArea } =
+  const { downloadImage, reset, image, disabledCropBtn, cropSelectedArea, downloadWithFilter } =
     useContext(ImageEditorContext);
   return image ? (
     <div className="footer">
@@ -10,6 +10,7 @@ const Footer = () => {
         Apply Crop
       </button>
       <button onClick={downloadImage}>Download Image</button>
+      {/* <button onClick={downloadWithFilter}>Download Image with Filter</button> */}
       <button onClick={reset}>Reset</button>
     </div>
   ) : null;

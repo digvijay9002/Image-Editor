@@ -11,6 +11,8 @@ const Settings = () => {
     { name: "inversion", max: 100 },
     { name: "exposure", max: 100 },
     { name: "contrast", max: 100 },
+    { name: "blur", max: 10 },
+    { name: "sepia", max: 100 },
   ];
 
   return (

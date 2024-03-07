@@ -8,6 +8,7 @@ export const ImageEditorContext = createContext(null);
 const ImageEditorProvide = ({ children }) => {
   const [image, setImage] = useState(null);
   const [oldImage, setOldImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [imageName, setImageName] = useState("");
   // const [imageUrl, setImageUrl] = useState(null);
   const [loadedImage, setLoadedImage] = useState(false);
@@ -18,6 +19,8 @@ const ImageEditorProvide = ({ children }) => {
     inversion: 0,
     exposure: 0,
     contrast: 0,
+    blur: 0,
+    sepia: 0,
   });
   const [flipRotate, setFlipRotate] = useState({
     rotate: 0,
@@ -64,6 +67,7 @@ const ImageEditorProvide = ({ children }) => {
   const putImageData = useCallback(
     (imageData) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.background = "#26272b";
       ctx.putImageData(imageData, currentCoordinates.x, currentCoordinates.y);
     },
     [canvas, ctx, currentCoordinates]
@@ -112,6 +116,48 @@ const ImageEditorProvide = ({ children }) => {
       }),
     [currentCoordinates]
   );
+
+  const adjustBlur = useCallback(
+    (value, imageData) =>
+      new Promise((resolve) => {
+        if (currentCoordinates.width != null) {
+          const data = imageData.data;
+          const blurRadius = Number(value) * 2;
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
+
+          for (let y = 0; y < canvasHeight; y++) {
+            for (let x = 0; x < canvasWidth; x++) {
+              let r = 0, g = 0, b = 0, a = 0;
+
+              for (let j = -blurRadius; j <= blurRadius; j++) {
+                for (let i = -blurRadius; i <= blurRadius; i++) {
+                  const pixelX = Math.min(canvasWidth - 1, Math.max(0, x + i));
+                  const pixelY = Math.min(canvasHeight - 1, Math.max(0, y + j));
+                  const index = (pixelY * canvasWidth + pixelX) * 4;
+
+                  r += data[index];
+                  g += data[index + 1];
+                  b += data[index + 2];
+                  a += data[index + 3];
+                }
+              }
+
+              const blurPixelCount = Math.pow(2 * blurRadius + 1, 2);
+              data[y * canvasWidth * 4 + x * 4] = r / blurPixelCount;
+              data[y * canvasWidth * 4 + x * 4 + 1] = g / blurPixelCount;
+              data[y * canvasWidth * 4 + x * 4 + 2] = b / blurPixelCount;
+              data[y * canvasWidth * 4 + x * 4 + 3] = a / blurPixelCount;
+            }
+          }
+        }
+
+        resolve(imageData);
+      }),
+    [currentCoordinates]
+  );
+
+
 
   const adjustSaturation = useCallback(
     (value, imageData) =>
@@ -183,6 +229,28 @@ const ImageEditorProvide = ({ children }) => {
       }),
     [currentCoordinates]
   );
+  const adjustSepia = useCallback(
+    (value, imageData) =>
+      new Promise((resolve) => {
+        if (currentCoordinates.width != null) {
+          const data = imageData.data;
+          const sepiaIntensity = Number(value) / 100;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+
+            data[i] = Math.min(255, (r * (1 - 0.607)) + (g * 0.769) + (b * 0.189) * sepiaIntensity);
+            data[i + 1] = Math.min(255, (r * 0.349) + (g * (1 - 0.314)) + (b * 0.168) * sepiaIntensity);
+            data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * (1 - 0.869)) * sepiaIntensity);
+          }
+        }
+
+        resolve(imageData);
+      }),
+    [currentCoordinates]
+  );
 
   const adjustContrast = useCallback(
     (value, imageData) =>
@@ -212,6 +280,8 @@ const ImageEditorProvide = ({ children }) => {
         saturation,
         inversion,
         grayscale,
+        blur,
+        sepia
       } = settings;
 
       const img = document.createElement("img");
@@ -270,6 +340,8 @@ const ImageEditorProvide = ({ children }) => {
       if (inversion) imageData = await adjustInversion(inversion, imageData);
       if (exposure) imageData = await adjustExposure(exposure, imageData);
       if (contrast) imageData = await adjustContrast(contrast, imageData);
+      if (blur) imageData = await adjustBlur(blur, imageData);
+      if (sepia) imageData = await adjustSepia(sepia, imageData)
 
       putImageData(imageData);
     },
@@ -280,6 +352,8 @@ const ImageEditorProvide = ({ children }) => {
       adjustInversion,
       adjustExposure,
       adjustContrast,
+      adjustBlur,
+      adjustSepia,
       canvas,
       currentCoordinates,
       ctx,
@@ -391,12 +465,15 @@ const ImageEditorProvide = ({ children }) => {
         applyFilters(true);
       };
 
-      if (cropBox) {
+      if (cropBox && (width > 0 && height > 0)) {
         setDisabledCropBtn(false);
+      } else {
+        setDisabledCropBtn(true);
       }
     },
-    [canvas, cropRect, cropBox, image, zoomScale, applyFilters]
+    [canvas, cropRect, cropBox, image, zoomScale, applyFilters, setDisabledCropBtn]
   );
+
 
   const mouseDown = useCallback(
     (e) => {
@@ -651,7 +728,8 @@ const ImageEditorProvide = ({ children }) => {
 
   const downloadImage = () => {
     const link = document.createElement("a");
-    link.download = imageName;
+    const editedImageName = `edited image`; // Prefix "edited_" to the original image name
+    link.download = editedImageName;
     link.href = canvas.toDataURL();
     link.click();
   };
@@ -818,6 +896,7 @@ const ImageEditorProvide = ({ children }) => {
     }
 
     try {
+      setIsLoading(true);
       const blob = await imglyRemoveBackground(imageSrc);
       // The result is a blob encoded as PNG. It can be converted to a URL to be used as HTMLImage.src
       imageUrl = URL.createObjectURL(blob);
@@ -841,6 +920,7 @@ const ImageEditorProvide = ({ children }) => {
           currentCoordinates.height * flipRotate.flipVertical
         );
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+        setIsLoading(false);
         ctx.restore();
 
         // Apply filters if needed
@@ -857,16 +937,70 @@ const ImageEditorProvide = ({ children }) => {
   const applyFilter = useCallback((filter) => {
     setAppliedFilter(filter);
     const canvas = canvasRef.current;
+    const filters = [
+      "aden",
+      "brannan",
+      "brooklyn",
+      "clarendon",
+      "earlybird",
+      "gingham",
+      "hudson",
+      "inkwell",
+      "kelvin",
+      "lark",
+      "lofi",
+      "maven",
+      "mayfair",
+      "moon",
+      "nashville",
+      "perpetua",
+      "reyes",
+      "rise",
+      "slumber",
+      "stinson",
+      "toaster",
+      "valencia",
+      "walden",
+      "willow",
+      "xpro2"
+    ];
+
     if (canvas) {
-      if (filter) {
-        canvas.style.filter = `var(--${filter})`; // Apply the CSS filter
-        canvas.classList.add(`${filter}`);
-      } else {
-        canvas.style.filter = "none"; // Remove the filter
-        canvas.className = ""; // Clear any existing filter class
+      // Remove all existing filters
+      canvas.style.filter = "none";
+      // Remove all existing filter classes
+      canvas.classList.remove(...filters);
+
+      if (filter && filters.includes(filter)) {
+        canvas.classList.add(filter); // Apply the selected CSS filter class
       }
     }
   }, [setAppliedFilter, canvasRef]);
+  const downloadWithFilter = () => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const image = new Image();
+    image.crossOrigin = 'Anonymous';
+
+    image.onload = () => {
+      canvas.width = image.width;
+      canvas.height = image.height;
+
+      // Apply the filter
+      context.filter = "blur(5px)"; // Example filter
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      const link = document.createElement('a');
+      link.download = 'image_with_filter.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    };
+
+    // Use the original image source here
+    image.src = canvas.ToObjectURL(loadedImage); // Assuming displayFiles is an array of image URLs
+  };
+
+
 
   useEffect(() => {
     // Update the canvas filter when the appliedFilter changes
@@ -902,7 +1036,9 @@ const ImageEditorProvide = ({ children }) => {
         handleRemoveBG,
         appliedFilter,
         applyFilter,
-        loadedImage
+        loadedImage,
+        downloadWithFilter,
+        isLoading,
       }}
     >
       {children}
